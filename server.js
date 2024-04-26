@@ -36,7 +36,7 @@ let dbURL = "mongodb://localhost:27017/final-project";
 app.use("/", express.static("public"));
 var jsonParser = bodyParser.json();
 
-//TODO: implement oauth2 using jwt
+//TODO: implement oauth2 using jwt?
 
 //TODO: gzip stuff?????
 let users = [//TODO: get rid of/change later
@@ -49,14 +49,18 @@ let users = [//TODO: get rid of/change later
         id: 2, 
         username: 'nolasco',
         password: '456'
+    },
+    {
+        id: 3, 
+        username: 'jdoe',
+        password: 'notrealpw'
     }
 ];
 
 let dbUsers = [];
 let budgetData = [];
 
-//TODO: add mongoose calls to handle fetching budget data for user
-mongoose.connect(dbURL).then(() => {
+/* mongoose.connect(dbURL).then(() => {
     console.log("connected to MongoDB database");
 
     mongoose.connection.db
@@ -91,26 +95,27 @@ mongoose.connect(dbURL).then(() => {
     }).catch((connectionError) => {
         console.log(connectionError);
     });
-    /* budgetModel.find().then((data) => {
-        console.log(data);
-        let budgetItem = data[0];
-        //console.log(budgetItem);
-        let bID = budgetItem._id;
-        console.log(bID);
+    // budgetModel.find().then((data) => {
+    //     console.log(data);
+    //     let budgetItem = data[0];
+    //     //console.log(budgetItem);
+    //     let bID = budgetItem._id;
+    //     console.log(bID);
 
-        budgetModel.findById(bID).populate('user').then((test) => {
-            console.log(test);
-            //console.log(test.user.name);
-            mongoose.connection.close();
-        });
-    }).catch((connectionError) => {
-        console.log(connectionError);
-    }); */
+    //     budgetModel.findById(bID).populate('user').then((test) => {
+    //         console.log(test);
+    //         //console.log(test.user.name);
+    //         mongoose.connection.close();
+    //     });
+    // }).catch((connectionError) => {
+    //     console.log(connectionError);
+    // });
 
 }).catch((connectionError) => {
     console.log(connectionError);
-});
+}); */
 
+//TODO: add mongoose calls to handle fetching budget data for user
 //TODO: add mongoose calls to handle user adding new budget item
 
 //TODO: add signup feature, w password encryption
@@ -121,31 +126,60 @@ mongoose.connect(dbURL).then(() => {
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
+    //Mongoose calls to pull users table from database, checks if entered user info matches
+    //If info matches, creates JWT token
     mongoose.connect(dbURL).then(() => {
         console.log("connected to MongoDB database");
     
         usersModel.find({username: username}).then((data) => {
             if(data.length){
-                const userPass = data.password;
-                if(userPass.equals(password)){
-                    //put login/token stuff here
+                //console.log(data[0]);
+                const userPass = data[0].password;
+                //console.log(userPass);
+
+                if(userPass === password){
+                    console.log("Password matches!");
+                    let token = jwt.sign({id: data[0]._id, username: data[0].username}, secretKey, {expiresIn: '1m'});
+                    res.status(200).json({
+                        success: true,
+                        err: null,
+                        token
+                    });
+                    mongoose.connection.close();
+                    return;
                 } else {
                     console.log("Password incorrect!");
+                    res.status(401).json({
+                        success: false, 
+                        token: null,
+                        err: 'Username or password is incorrect'
+                    });
+
+                    mongoose.connection.close();
+                    return;
                 }
             } else {
                 console.log("Username not found!");
+                /* res.status(403).json({
+                    success: false, 
+                    token: null,
+                    err: 'Username not found'
+                });
+                return; */
             }
 
-            mongoose.connection.close();
+            //mongoose.connection.close();
         }).catch((connectionError) => {
             console.log(connectionError);
+            //res.status(404).json({connectionError});
+            //return;
         });
     
     }).catch((connectionError) => {
         console.log(connectionError);
     });
 
-    for (let user of users) {
+    /* for (let user of users) {
         if(username == user.username && password == user.password){
             let token = jwt.sign({id: user.id, username: user.username}, secretKey, {expiresIn: '1m'});
             res.json({
@@ -155,15 +189,16 @@ app.post('/api/login', (req, res) => {
             });
             break;
         } else {
-            res.status(401).json({
-                success: false, 
-                token: null,
-                err: 'Username or password is incorrect'
-            });
+            // res.status(401).json({
+            //     success: false, 
+            //     token: null,
+            //     err: 'Username or password is incorrect'
+            // });
+            // return;
         }
-    }
+    } */
     console.log("This is me ", username, password);
-    res.json({data: 'it works'});
+    //res.json({data: 'it works'});
 });
 
 //TODO: add budget fetching from db here
