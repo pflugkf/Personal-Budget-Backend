@@ -39,7 +39,7 @@ var jsonParser = bodyParser.json();
 //TODO: implement oauth2 using jwt?
 
 //TODO: gzip stuff?????
-let users = [//TODO: get rid of/change later
+/* let users = [//TODO: get rid of/change later
     {
         id: 1, 
         username: 'fabio',
@@ -55,7 +55,7 @@ let users = [//TODO: get rid of/change later
         username: 'jdoe',
         password: 'notrealpw'
     }
-];
+]; */
 
 let dbUsers = [];
 let budgetData = [];
@@ -203,7 +203,35 @@ app.post('/api/login', (req, res) => {
 
 //TODO: add budget fetching from db here
 app.get('/api/dashboard', jwtMW, (req, res) => {
-    console.log(req);
+    console.log(req.header);
+    var authHeader = req.headers['authorization'];
+    var token = authHeader && authHeader.split(' ')[1];
+    console.log(authHeader);
+    console.log(token);
+
+    var tokenArray = token.split('.');
+    console.log(tokenArray);
+    const tokenPayload = JSON.parse(atob(tokenArray[1]));
+    console.log(tokenPayload);
+    var userID = tokenPayload.id;
+    console.log(tokenPayload.id);
+
+    mongoose.connect(dbURL).then(() => {
+        console.log("connected to MongoDB database");
+
+        budgetModel.find({user: userID}).then((data) => {
+            console.log(data);
+            mongoose.connection.close();
+        }).catch((connectionError) => {
+            console.log(connectionError);
+        });
+        
+
+    
+    }).catch((connectionError) => {
+        console.log(connectionError);
+    });
+
     res.json({
         success: true,
         myContent: 'Personal budget dashboard for logged in user'
