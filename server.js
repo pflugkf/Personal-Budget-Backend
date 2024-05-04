@@ -57,9 +57,6 @@ var jsonParser = bodyParser.json();
     }
 ]; */
 
-let dbUsers = [];
-let budgetData = [];
-
 /* mongoose.connect(dbURL).then(() => {
     console.log("connected to MongoDB database");
 
@@ -201,8 +198,16 @@ app.post('/api/login', (req, res) => {
     //res.json({data: 'it works'});
 });
 
+app.post('/api/signup', (req, res) => {
+    console.log(req);
+});
+
 //TODO: add budget fetching from db here
 app.get('/api/dashboard', jwtMW, (req, res) => {
+    let budgetData = {
+        myBudget: []
+    };
+
     console.log(req.header);
     var authHeader = req.headers['authorization'];
     var token = authHeader && authHeader.split(' ')[1];
@@ -221,7 +226,12 @@ app.get('/api/dashboard', jwtMW, (req, res) => {
 
         budgetModel.find({user: userID}).then((data) => {
             console.log(data);
+            budgetData.myBudget = data;
             mongoose.connection.close();
+            res.json({//TODO: change to status?????
+                success: true,
+                myContent: budgetData
+            });
         }).catch((connectionError) => {
             console.log(connectionError);
         });
@@ -232,10 +242,10 @@ app.get('/api/dashboard', jwtMW, (req, res) => {
         console.log(connectionError);
     });
 
-    res.json({
+    /* res.json({
         success: true,
         myContent: 'Personal budget dashboard for logged in user'
-    });
+    }); */
 });
 
 app.get('/api/settings', jwtMW, (req, res) => {
