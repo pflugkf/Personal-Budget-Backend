@@ -112,7 +112,6 @@ var jsonParser = bodyParser.json();
     console.log(connectionError);
 }); */
 
-//TODO: add mongoose calls to handle fetching budget data for user
 //TODO: add mongoose calls to handle user adding new budget item
 
 //TODO: add signup feature, w password encryption
@@ -202,24 +201,24 @@ app.post('/api/signup', (req, res) => {
     console.log(req);
 });
 
-//TODO: add budget fetching from db here
 app.get('/api/dashboard', jwtMW, (req, res) => {
     let budgetData = {
         myBudget: []
     };
 
-    console.log(req.header);
+    //console.log(req.header);
     var authHeader = req.headers['authorization'];
     var token = authHeader && authHeader.split(' ')[1];
-    console.log(authHeader);
-    console.log(token);
+    //console.log(authHeader);
+    //console.log(token);
 
-    var tokenArray = token.split('.');
-    console.log(tokenArray);
+    /* var tokenArray = token.split('.');
+    //console.log(tokenArray);
     const tokenPayload = JSON.parse(atob(tokenArray[1]));
-    console.log(tokenPayload);
+    //console.log(tokenPayload);
     var userID = tokenPayload.id;
-    console.log(tokenPayload.id);
+    //console.log(tokenPayload.id); */
+    var userID = getUserID(token);
 
     mongoose.connect(dbURL).then(() => {
         console.log("connected to MongoDB database");
@@ -228,7 +227,7 @@ app.get('/api/dashboard', jwtMW, (req, res) => {
             console.log(data);
             budgetData.myBudget = data;
             mongoose.connection.close();
-            res.json({//TODO: change to status?????
+            res.json({//TODO: change to status
                 success: true,
                 myContent: budgetData
             });
@@ -248,13 +247,72 @@ app.get('/api/dashboard', jwtMW, (req, res) => {
     }); */
 });
 
-app.get('/api/settings', jwtMW, (req, res) => {
-    console.log(req);
-    res.json({
-        success: true,
-        myContent: 'Settings page'
+app.post('/api/newdoc', jsonParser, (req, res) => {
+    console.log(req.body);
+    console.log(req.body.user);
+    console.log(typeof req.body.user);
+
+    var newID = new mongoose.mongo.ObjectId(String(req.body.user));
+    console.log(newID);
+
+    req.body.user = newID;
+    console.log(req.body);
+
+    mongoose.connect(dbURL).then(() => {
+        console.log("Connected to database");
+
+        let newData = new budgetModel(req.body);
+        budgetModel.insertMany(newData).then((data) => {
+            console.log(data);
+            mongoose.connection.close();
+            res.status(200).json({
+                success: true,
+                content: data
+            });
+        }).catch((connectionError) => {
+            console.log(connectionError);
+            res.status(400).send(connectionError);
+        });
     });
 });
+
+app.get('/api/verify', jwtMW, (req, res) => {
+    var authHeader = req.headers['authorization'];
+    var token = authHeader && authHeader.split(' ')[1];
+    
+    if(token){
+        try {
+            const decode = jwt.verify(token, secretKey);
+            req.user = decode;
+            console.log(req.user);
+            console.log("user id " + req.user.id);
+            return res.status(200).json({
+                success: true,
+                content: req.user.id
+            });
+        } catch(err){
+            return res.status(400).json('Token not valid');
+        }
+        
+    } else {
+        return res.status(401).json("Unauthorized user.");
+    }
+});
+
+function getUserID(token) {
+    var tokenArray = token.split('.');
+    //console.log(tokenArray);
+    const tokenPayload = JSON.parse(atob(tokenArray[1]));
+    //console.log(tokenPayload);
+    var userID = tokenPayload.id;
+    //console.log(tokenPayload.id);
+
+    return userID;
+}
+
+//TODO: add function for unpacking/verifying token to reduce redundant code????
+
+//TODO: add token ttl check for frontend to call
 
 app.use(function (err, req, res, next) {
     console.log(err.name === 'UnauthorizedError');
