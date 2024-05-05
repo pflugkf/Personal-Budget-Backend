@@ -4,7 +4,6 @@ const budgetSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
-        unique: true,
         trim: true
     },
     budget: {
@@ -15,7 +14,6 @@ const budgetSchema = new mongoose.Schema({
     color: {
         type: String,
         required: true,
-        unique: true,
         minlength: 6
     },
     user: {

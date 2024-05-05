@@ -175,30 +175,38 @@ app.post('/api/login', (req, res) => {
         console.log(connectionError);
     });
 
-    /* for (let user of users) {
-        if(username == user.username && password == user.password){
-            let token = jwt.sign({id: user.id, username: user.username}, secretKey, {expiresIn: '1m'});
-            res.json({
-                success: true,
-                err: null,
-                token
-            });
-            break;
-        } else {
-            // res.status(401).json({
-            //     success: false, 
-            //     token: null,
-            //     err: 'Username or password is incorrect'
-            // });
-            // return;
-        }
-    } */
-    console.log("This is me ", username, password);
+    //console.log("This is me ", username, password);
     //res.json({data: 'it works'});
 });
 
-app.post('/api/signup', (req, res) => {
-    console.log(req);
+app.post("/api/signup", jsonParser, (req, res) => {
+  console.log(req.body);
+
+  mongoose.connect(dbURL).then(() => {
+    console.log("Connected to database");
+
+    let newUser = new usersModel(req.body);
+    usersModel.insertMany(newUser).then((data) => {
+        console.log(data);
+
+        let token = jwt.sign(
+          { id: data[0]._id, username: data[0].username },
+          secretKey,
+          { expiresIn: "1m" }
+        );
+        res.status(200).json({
+          success: true,
+          err: null,
+          token,
+        });
+        mongoose.connection.close();
+        return;
+      })
+      .catch((connectionError) => {
+        console.log(connectionError);
+        res.status(400).send(connectionError);
+      });
+  });
 });
 
 app.get('/api/dashboard', jwtMW, (req, res) => {
@@ -212,12 +220,6 @@ app.get('/api/dashboard', jwtMW, (req, res) => {
     //console.log(authHeader);
     //console.log(token);
 
-    /* var tokenArray = token.split('.');
-    //console.log(tokenArray);
-    const tokenPayload = JSON.parse(atob(tokenArray[1]));
-    //console.log(tokenPayload);
-    var userID = tokenPayload.id;
-    //console.log(tokenPayload.id); */
     var userID = getUserID(token);
 
     mongoose.connect(dbURL).then(() => {
