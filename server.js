@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const compression = require("compression");
-//var cors = require('cors');
+
 const mongoose = require("mongoose");
 
 const jwt = require("jsonwebtoken");
@@ -9,8 +9,6 @@ const exjwt = require("express-jwt");
 const bodyParser = require("body-parser");
 const path = require("path");
 
-//app.use(cors());
-///app.use(cors({ origin: true, credentials: true }));
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -334,4 +332,33 @@ app.use(function (err, req, res, next) {
 
 app.listen(PORT, () => {
   console.log(`Serving on port ${PORT}`);
+});
+
+//Function for testing
+app.get("/api/test/budget", (req, res) => {
+  let budgetData = {
+    myBudget: [],
+  };
+
+  mongoose.connect(hostedURL, connectionParams).then(() => {
+      budgetModel.find().then((data) => {
+          budgetData.myBudget = data;
+          mongoose.connection.close();
+          res.status(200).json({
+            success: true,
+            myContent: budgetData,
+          });
+        })
+        .catch((error) => {
+          console.log(error);
+          return res.status(404).json({
+            success: false,
+            token: null,
+            err: error,
+          });
+        });
+    }).catch((connectionError) => {
+      console.log(connectionError);
+      return res.status(400).json({connectionError});
+    });
 });
