@@ -138,7 +138,31 @@ app.post("/api/signup", jsonParser, (req, res) => {
               err: "Username taken, please choose another",
             });
       } else {
-        usersModel.find({ password: req.body.password }).then((data) => {
+        usersModel.insertMany(newUser).then((data) => {
+          console.log(data);
+  
+          //If successful, create user token
+          let token = jwt.sign(
+            { id: data[0]._id, username: data[0].username },
+            secretKey,
+            { expiresIn: "1m" }
+          );
+          res.status(200).json({
+            success: true,
+            err: null,
+            token,
+          });
+          mongoose.connection.close();
+          return;
+        }).catch((connectionError) => {
+          console.log(connectionError);
+          res.status(404).json({
+              success: false,
+              token: null,
+              err: error,
+            });
+        });
+        /* usersModel.find({ password: req.body.password }).then((data) => {
           if (data.length) {
             console.log("Password must be unique!");
                 res.status(401).json({
@@ -175,7 +199,7 @@ app.post("/api/signup", jsonParser, (req, res) => {
         }).catch((connectionError) => {
           console.log(connectionError);
           res.status(400).json({connectionError});
-        });
+        }); */
       }
     }).catch((connectionError) => {
       console.log(connectionError);
