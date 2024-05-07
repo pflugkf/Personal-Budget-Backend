@@ -128,34 +128,66 @@ app.post("/api/signup", jsonParser, (req, res) => {
 
     //Create new Users document, then add it to the Users collection
     let newUser = new usersModel(req.body);
-    usersModel.insertMany(newUser).then((data) => {
-        console.log(data);
 
-        //If successful, create user token
-        let token = jwt.sign(
-          { id: data[0]._id, username: data[0].username },
-          secretKey,
-          { expiresIn: "1m" }
-        );
-        res.status(200).json({
-          success: true,
-          err: null,
-          token,
+    usersModel.find({ username: req.body.username }).then((data) => {
+      if (data.length) {
+        console.log("Username must be unique!");
+            res.status(401).json({
+              success: false,
+              token: null,
+              err: "Username taken, please choose another",
+            });
+      } else {
+        usersModel.find({ password: req.body.password }).then((data) => {
+          if (data.length) {
+            console.log("Password must be unique!");
+                res.status(401).json({
+                  success: false,
+                  token: null,
+                  err: "Password invalid, please choose another",
+                });
+          } else {
+            usersModel.insertMany(newUser).then((data) => {
+              console.log(data);
+      
+              //If successful, create user token
+              let token = jwt.sign(
+                { id: data[0]._id, username: data[0].username },
+                secretKey,
+                { expiresIn: "1m" }
+              );
+              res.status(200).json({
+                success: true,
+                err: null,
+                token,
+              });
+              mongoose.connection.close();
+              return;
+            }).catch((connectionError) => {
+              console.log(connectionError);
+              res.status(404).json({
+                  success: false,
+                  token: null,
+                  err: error,
+                });
+            });
+          }
+        }).catch((connectionError) => {
+          console.log(connectionError);
+          res.status(400).json({connectionError});
         });
-        mongoose.connection.close();
-        return;
-      }).catch((connectionError) => {
-        console.log(connectionError);
-        res.status(404).json({
-            success: false,
-            token: null,
-            err: error,
-          });
-      });
+      }
+    }).catch((connectionError) => {
+      console.log(connectionError);
+      res.status(400).json({connectionError});
+    });
   }).catch((connectionError) => {
     console.log(connectionError);
     res.status(400).json({connectionError});
   });
+}).catch((connectionError) => {
+  console.log(connectionError);
+  res.status(400).json({connectionError});
 });
 
 //Get Dashboard API function
