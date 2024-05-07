@@ -11,10 +11,9 @@ const userSchema = new mongoose.Schema({
         unique: true,
         minlength: 6
     },
-    password: {//encrypt this
+    password: {
         type: String,
         required: true,
-        unique: true,
         minlength: 6
     },
     budget: [{
