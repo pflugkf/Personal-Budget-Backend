@@ -185,9 +185,6 @@ app.post("/api/signup", jsonParser, (req, res) => {
     console.log(connectionError);
     res.status(400).json({connectionError});
   });
-}).catch((connectionError) => {
-  console.log(connectionError);
-  res.status(400).json({connectionError});
 });
 
 //Get Dashboard API function
